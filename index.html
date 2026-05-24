@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GRIND Workout</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --text: #1a1916;
+    --text2: #6b6a64;
+    --text3: #a8a79f;
+    --border: rgba(26,25,22,0.12);
+    --border2: rgba(26,25,22,0.22);
+    --accent: #1a1916;
+    --accent-fg: #ffffff;
+    --green: #2d6a4f;
+    --green-fg: #ffffff;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+ 
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 16px 48px;
+  }
+ 
+  .app { width: 100%; max-width: 460px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+ 
+  .logo { font-size: 28px; font-weight: 500; letter-spacing: -0.5px; color: var(--text); margin-bottom: 2px; }
+  .sub { font-size: 13px; color: var(--text2); margin-bottom: 24px; letter-spacing: 0.02em; }
+  .section-label {
+    font-size: 10px; font-weight: 500; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin: 24px 0 10px;
+  }
+ 
+  .card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+ 
+  /* Sound enable button */
+  .sound-btn {
+    width: 100%; padding: 13px;
+    background: var(--surface);
+    color: var(--text);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 500;
+    cursor: pointer; margin-top: 10px;
+    font-family: 'DM Sans', sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.2s;
+  }
+  .sound-btn.enabled {
+    background: var(--green); color: var(--green-fg);
+    border-color: var(--green);
+  }
+  .sound-btn:hover { opacity: 0.88; }
+ 
+  /* Exercise cards */
+  .ex-card { display: flex; align-items: center; gap: 10px; cursor: grab; user-select: none; }
+  .ex-card:active { cursor: grabbing; }
+  .drag-handle { color: var(--text3); font-size: 17px; flex-shrink: 0; }
+  .ex-num { font-size: 12px; font-weight: 500; color: var(--text3); min-width: 18px; }
+  .ex-name-btn {
+    flex: 1; font-size: 14px; font-weight: 500; color: var(--text);
+    background: none; border: none; text-align: left; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; padding: 3px 0;
+    border-bottom: 1px dashed var(--border2);
+    transition: opacity 0.15s; line-height: 1.4;
+  }
+  .ex-name-btn:hover { opacity: 0.6; }
+  .ex-actions { display: flex; gap: 5px; flex-shrink: 0; }
+  .icon-btn {
+    background: none; border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm); width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text2); font-size: 15px;
+    transition: background 0.12s;
+  }
+  .icon-btn:hover { background: var(--surface2); }
+ 
+  /* Buttons */
+  .btn-primary {
+    width: 100%; padding: 13px; background: var(--accent); color: var(--accent-fg);
+    border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500;
+    cursor: pointer; margin-top: 20px; font-family: 'DM Sans', sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.82; }
+  .btn-secondary {
+    width: 100%; padding: 12px; background: none; color: var(--text);
+    border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+    font-size: 14px; cursor: pointer; margin-top: 8px;
+    font-family: 'DM Sans', sans-serif; transition: background 0.12s;
+  }
+  .btn-secondary:hover { background: var(--surface2); }
+ 
+  /* Settings */
+  .settings-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .settings-row:last-child { margin-bottom: 0; }
+  .settings-label { font-size: 13px; color: var(--text2); flex: 1; display: flex; align-items: center; gap: 6px; }
+  .settings-val { font-size: 13px; font-weight: 500; min-width: 44px; text-align: right; color: var(--text); font-family: 'DM Mono', monospace; }
+  input[type=range] {
+    flex: 2; -webkit-appearance: none; appearance: none;
+    height: 4px; background: var(--border2); border-radius: 2px; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--accent); cursor: pointer;
+  }
+ 
+  /* Add exercise */
+  .add-row { display: flex; gap: 8px; margin-top: 10px; }
+  .add-row input {
+    flex: 1; padding: 9px 12px; border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm); background: var(--surface);
+    color: var(--text); font-size: 13px; font-family: 'DM Sans', sans-serif; outline: none;
+  }
+  .add-row input:focus { border-color: var(--accent); }
+  .add-btn {
+    padding: 9px 14px; background: var(--accent); color: var(--accent-fg);
+    border: none; border-radius: var(--radius-sm); font-size: 13px;
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    display: flex; align-items: center; gap: 5px;
+    transition: opacity 0.15s; white-space: nowrap;
+  }
+  .add-btn:hover { opacity: 0.82; }
+  .pool-note { font-size: 11px; color: var(--text3); margin-top: 6px; }
+ 
+  /* Timer */
+  .timer-wrap { text-align: center; padding: 8px 0; }
+  .timer-phase-lbl { font-size: 11px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+  .timer-ex-name { font-size: 20px; font-weight: 500; color: var(--text); margin-bottom: 24px; min-height: 28px; }
+  .big-time { font-size: 72px; font-weight: 500; letter-spacing: -3px; color: var(--text); line-height: 1; margin-bottom: 10px; font-family: 'DM Mono', monospace; }
+  .prog-wrap { height: 5px; background: var(--surface2); border-radius: 3px; margin-bottom: 20px; }
+  .prog-bar { height: 5px; background: var(--accent); border-radius: 3px; transition: width 0.9s linear; }
+  .ex-queue { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .ex-pip { font-size: 11px; padding: 3px 9px; border-radius: 20px; border: 0.5px solid var(--border); color: var(--text3); }
+  .ex-pip.active { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
+  .ex-pip.done { background: var(--surface2); color: var(--text3); }
+  .round-lbl { font-size: 12px; color: var(--text2); margin-bottom: 20px; }
+  .ctrl-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px; }
+  .ctrl-btn {
+    background: none; border: 0.5px solid var(--border2); border-radius: 50%;
+    width: 46px; height: 46px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text); font-size: 18px; transition: background 0.12s;
+  }
+  .ctrl-btn:hover { background: var(--surface2); }
+  .ctrl-btn.big { width: 62px; height: 62px; font-size: 24px; border-width: 1px; }
+ 
+  /* Sound status in timer */
+  .sound-status {
+    font-size: 11px; color: var(--text3); text-align: center;
+    margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .sound-status.on { color: var(--green); }
+  .sound-toggle-btn {
+    background: none; border: none; cursor: pointer; font-size: 16px;
+    color: inherit; padding: 0; line-height: 1; display: flex; align-items: center;
+  }
+ 
+  /* Summary */
+  .summary-hero { text-align: center; padding: 20px 0 16px; }
+  .trophy-icon { font-size: 44px; color: var(--text); }
+  .summary-title { font-size: 22px; font-weight: 500; margin: 10px 0 6px; }
+  .summary-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+  .stat-card { background: var(--surface2); border-radius: var(--radius-sm); padding: 12px; text-align: center; }
+  .stat-val { font-size: 22px; font-weight: 500; font-family: 'DM Mono', monospace; }
+  .stat-lbl { font-size: 10px; color: var(--text2); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .log-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .log-item:last-child { border-bottom: none; }
+  .log-name { font-size: 13px; font-weight: 500; }
+  .log-detail { font-size: 12px; color: var(--text2); }
+  .share-row { display: flex; gap: 8px; margin-top: 4px; }
+  .share-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 11px; border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+    background: none; cursor: pointer; font-size: 13px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; transition: background 0.12s;
+  }
+  .share-btn:hover { background: var(--surface2); }
+ 
+  /* Picker */
+  .picker-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4); z-index: 1000;
+    align-items: flex-end; justify-content: center;
+  }
+  .picker-overlay.open { display: flex; }
+  .picker-sheet {
+    background: var(--surface); border-radius: 16px 16px 0 0;
+    width: 100%; max-width: 460px; max-height: 70vh;
+    display: flex; flex-direction: column;
+  }
+  .picker-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 16px 10px; border-bottom: 0.5px solid var(--border); flex-shrink: 0;
+  }
+  .picker-title { font-size: 14px; font-weight: 500; }
+  .picker-close { background: none; border: none; font-size: 20px; color: var(--text2); cursor: pointer; line-height: 1; }
+  .picker-search { padding: 10px 14px; flex-shrink: 0; }
+  .picker-search input {
+    width: 100%; padding: 8px 12px; border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm); background: var(--surface2);
+    color: var(--text); font-size: 13px; font-family: 'DM Sans', sans-serif; outline: none;
+  }
+  .picker-search input:focus { border-color: var(--accent); }
+  .picker-hint { font-size: 11px; color: var(--text3); padding: 0 14px 8px; flex-shrink: 0; }
+  .picker-list { overflow-y: auto; flex: 1; padding: 0 8px 12px; }
+  .picker-item {
+    display: flex; align-items: center; padding: 11px 10px;
+    border-radius: var(--radius-sm); cursor: pointer; font-size: 13px;
+    color: var(--text); transition: background 0.1s; gap: 10px;
+  }
+  .picker-item:hover { background: var(--surface2); }
+  .picker-item.in-use { color: var(--text3); cursor: default; }
+  .picker-item.in-use:hover { background: none; }
+  .picker-check { width: 18px; text-align: center; flex-shrink: 0; font-size: 14px; }
+  .picker-in-use-badge { margin-left: auto; font-size: 10px; color: var(--text3); }
+ 
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: var(--accent-fg);
+    padding: 9px 18px; border-radius: var(--radius-sm); font-size: 12px;
+    opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 9999;
+    white-space: nowrap; font-family: 'DM Sans', sans-serif;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="toast" id="toast"></div>
+ 
+  <!-- Picker -->
+  <div class="picker-overlay" id="picker-overlay" onclick="handleOverlayClick(event)">
+    <div class="picker-sheet">
+      <div class="picker-header">
+        <span class="picker-title" id="picker-title">Choose exercise</span>
+        <button class="picker-close" onclick="resumeAudio(); closePicker();" aria-label="Close"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="picker-search">
+        <input type="text" id="picker-search" placeholder="Search exercises…" oninput="renderPickerList()" />
+      </div>
+      <div class="picker-hint">Tap an exercise to place it in this slot</div>
+      <div class="picker-list" id="picker-list"></div>
+    </div>
+  </div>
+ 
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="logo">GRIND</div>
+    <div class="sub">HIIT · Tabata · Calisthenics</div>
+ 
+    <!-- Sound enable button -->
+    <button class="sound-btn" id="sound-btn" onclick="enableSound()">
+      <i class="ti ti-volume-off" id="sound-icon"></i>
+      <span id="sound-label">Tap to enable sound</span>
+    </button>
+ 
+    <button class="btn-primary" onclick="resumeAudio(); goSetup();">
+      <i class="ti ti-bolt"></i> Generate workout
+    </button>
+    <button class="btn-secondary" onclick="resumeAudio(); goSetup();">
+      <i class="ti ti-settings"></i> &nbsp;Customize &amp; start
+    </button>
+ 
+    <div class="section-label">Add your own exercise</div>
+    <div class="add-row">
+      <input type="text" id="home-input" placeholder="e.g. Box jumps" maxlength="60"
+        onkeydown="if(event.key==='Enter'){ resumeAudio(); addExercise('home-input'); }" />
+      <button class="add-btn" onclick="resumeAudio(); addExercise('home-input');">
+        <i class="ti ti-plus"></i> Add
+      </button>
+    </div>
+    <div class="pool-note" id="pool-count-home"></div>
+  </div>
+ 
+  <!-- SETUP -->
+  <div class="screen" id="screen-setup">
+    <div class="logo">Your workout</div>
+    <div class="sub">Tap a name to pick · drag to reorder · ↺ for random swap</div>
+    <div id="ex-list"></div>
+ 
+    <div class="section-label">Settings</div>
+    <div class="card">
+      <div class="settings-row">
+        <span class="settings-label"><i class="ti ti-rotate-clockwise"></i> Rounds</span>
+        <input type="range" min="1" max="12" value="9" step="1" id="sl-rounds"
+          oninput="document.getElementById('vl-rounds').textContent=this.value; state.rounds=+this.value;">
+        <span class="settings-val" id="vl-rounds">9</span>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label"><i class="ti ti-clock"></i> Work time</span>
+        <input type="range" min="10" max="60" value="35" step="5" id="sl-work"
+          oninput="document.getElementById('vl-work').textContent=this.value+'s'; state.workSec=+this.value;">
+        <span class="settings-val" id="vl-work">35s</span>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label"><i class="ti ti-coffee"></i> Warm-up</span>
+        <input type="range" min="30" max="180" value="60" step="15" id="sl-warmup"
+          oninput="document.getElementById('vl-warmup').textContent=this.value+'s'; state.warmupSec=+this.value;">
+        <span class="settings-val" id="vl-warmup">60s</span>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label"><i class="ti ti-player-pause"></i> Break</span>
+        <input type="range" min="30" max="180" value="60" step="15" id="sl-break"
+          oninput="document.getElementById('vl-break').textContent=this.value+'s'; state.breakSec=+this.value;">
+        <span class="settings-val" id="vl-break">60s</span>
+      </div>
+    </div>
+ 
+    <div class="section-label">Add exercise to pool</div>
+    <div class="add-row">
+      <input type="text" id="setup-input" placeholder="e.g. Box jumps" maxlength="60"
+        onkeydown="if(event.key==='Enter'){ resumeAudio(); addExercise('setup-input'); }" />
+      <button class="add-btn" onclick="resumeAudio(); addExercise('setup-input');">
+        <i class="ti ti-plus"></i> Add
+      </button>
+    </div>
+    <div class="pool-note" id="pool-count-setup"></div>
+ 
+    <button class="btn-primary" onclick="resumeAudio(); startWorkout();">
+      <i class="ti ti-player-play"></i> Start workout
+    </button>
+    <button class="btn-secondary" onclick="resumeAudio(); showScreen('screen-home');">Back</button>
+  </div>
+ 
+  <!-- TIMER -->
+  <div class="screen" id="screen-timer">
+    <div class="timer-wrap">
+      <div class="timer-phase-lbl" id="phase-lbl">Warm-up</div>
+      <div class="timer-ex-name" id="phase-ex">Get ready!</div>
+      <div class="big-time" id="big-time">1:00</div>
+      <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:100%"></div></div>
+      <div class="ex-queue" id="ex-queue"></div>
+      <div class="round-lbl" id="round-lbl"></div>
+ 
+      <!-- Sound status + mute toggle -->
+      <div class="sound-status" id="sound-status-row">
+        <i class="ti ti-volume" id="timer-sound-icon"></i>
+        <span id="timer-sound-label">Sound on</span>
+        <button class="sound-toggle-btn" onclick="resumeAudio(); toggleMute();" aria-label="Toggle mute">
+          <i class="ti ti-switch-horizontal"></i>
+        </button>
+      </div>
+ 
+      <div class="ctrl-row">
+        <button class="ctrl-btn" onclick="resumeAudio(); rewindPhase();" aria-label="Rewind"><i class="ti ti-player-skip-back"></i></button>
+        <button class="ctrl-btn big" id="pp-btn" onclick="resumeAudio(); togglePause();" aria-label="Pause"><i class="ti ti-player-pause"></i></button>
+        <button class="ctrl-btn" onclick="resumeAudio(); skipPhase();" aria-label="Skip"><i class="ti ti-player-skip-forward"></i></button>
+      </div>
+    </div>
+    <button class="btn-secondary" onclick="resumeAudio(); endWorkout();">End workout</button>
+  </div>
+ 
+  <!-- SUMMARY -->
+  <div class="screen" id="screen-summary">
+    <div class="summary-hero">
+      <div class="trophy-icon"><i class="ti ti-trophy"></i></div>
+      <div class="summary-title">Workout complete!</div>
+      <div class="summary-sub" id="s-congrats"></div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val" id="s-rounds">9</div><div class="stat-lbl">Rounds</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-exercises">5</div><div class="stat-lbl">Exercises</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-time">--</div><div class="stat-lbl">Total time</div></div>
+    </div>
+    <div class="section-label">Exercises completed</div>
+    <div class="card" id="log-list"></div>
+    <div class="section-label" style="margin-top:20px;">Share your workout</div>
+    <div class="share-row">
+      <button class="share-btn" onclick="resumeAudio(); share('instagram');"><i class="ti ti-brand-instagram"></i> Instagram</button>
+      <button class="share-btn" onclick="resumeAudio(); share('twitter');"><i class="ti ti-brand-x"></i> X / Twitter</button>
+      <button class="share-btn" onclick="resumeAudio(); share('copy');"><i class="ti ti-copy"></i> Copy</button>
+    </div>
+    <button class="btn-primary" onclick="resumeAudio(); goSetup();" style="margin-top:20px;">
+      <i class="ti ti-refresh"></i> New workout
+    </button>
+    <button class="btn-secondary" onclick="resumeAudio(); showScreen('screen-home');">Home</button>
+  </div>
+</div>
+ 
+<script>
+let EXERCISES = [
+  "Push-ups","Burpees","Squats","Jump lunges","Mountain climbers",
+  "Tricep dips","High knees","Plank hold","Jump squats","Diamond push-ups",
+  "Side plank (L)","Side plank (R)","Jumping jacks","Pike push-ups","Glute bridges",
+  "Flutter kicks","Bear crawls","Extreme climbers","Battle rope burpee slams",
+  "Bench hops","Battle ropes","Rev lunge w/press and crucifix","Suicides",
+  "Sled push and pull","Battle jacks","Hop hop squats","Cross climbers",
+  "Dead lift with bicep curls","Fast feet","Step up with rev lunge","Half burpees",
+  "Bicep curl w/face smash","Burpee w/back rows","Warrior 3","Burpee pullups",
+  "Romanian laydown/ups","KB side swing","KB halo","KB chops","KB pull up over head",
+  "KB rainbow w/lunge","Sprinter lunge with hop","Pike planks","Bulgarian lunge",
+  "Elevated climbers","Crunches"
+];
+ 
+const CONGRATS = [
+  "Incredible effort today. You crushed it!",
+  "Beast mode: activated. Well done!",
+  "That's how champions train. Amazing work!",
+  "You showed up and gave it everything. Proud of you!",
+  "Every rep counts. You earned this!"
+];
+ 
+/* ── Audio Context ── */
+let audioCtx = null;
+let soundEnabled = false;
+let muted = false;
+ 
+function getCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioCtx;
+}
+ 
+// Called by the "Enable sound" button — must happen inside a user tap
+function enableSound() {
+  const ctx = getCtx();
+  ctx.resume().then(() => {
+    soundEnabled = true;
+    updateSoundBtn();
+    toast('Sound enabled!');
+    // Play a tiny silent buffer to fully unlock iOS audio
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+  }).catch(() => {
+    toast('Could not enable sound — try again');
+  });
+}
+ 
+// Called on every button press throughout the app to keep iOS context alive
+function resumeAudio() {
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+ 
+function updateSoundBtn() {
+  const btn = document.getElementById('sound-btn');
+  const icon = document.getElementById('sound-icon');
+  const label = document.getElementById('sound-label');
+  if (soundEnabled) {
+    btn.classList.add('enabled');
+    icon.className = 'ti ti-volume';
+    label.textContent = 'Sound enabled ✓';
+  } else {
+    btn.classList.remove('enabled');
+    icon.className = 'ti ti-volume-off';
+    label.textContent = 'Tap to enable sound';
+  }
+}
+ 
+function toggleMute() {
+  muted = !muted;
+  const icon = document.getElementById('timer-sound-icon');
+  const label = document.getElementById('timer-sound-label');
+  const row = document.getElementById('sound-status-row');
+  if (muted) {
+    icon.className = 'ti ti-volume-off';
+    label.textContent = 'Sound off';
+    row.classList.remove('on');
+  } else {
+    icon.className = 'ti ti-volume';
+    label.textContent = 'Sound on';
+    row.classList.add('on');
+    // Re-prime audio context on unmute
+    resumeAudio();
+  }
+}
+ 
+function updateTimerSoundStatus() {
+  const row = document.getElementById('sound-status-row');
+  const icon = document.getElementById('timer-sound-icon');
+  const label = document.getElementById('timer-sound-label');
+  if (!soundEnabled) {
+    icon.className = 'ti ti-volume-off';
+    label.textContent = 'Sound not enabled';
+    row.classList.remove('on');
+  } else if (muted) {
+    icon.className = 'ti ti-volume-off';
+    label.textContent = 'Sound off';
+    row.classList.remove('on');
+  } else {
+    icon.className = 'ti ti-volume';
+    label.textContent = 'Sound on';
+    row.classList.add('on');
+  }
+}
+ 
+/* ── Sound synthesis ── */
+function canPlay() { return soundEnabled && !muted && audioCtx && audioCtx.state === 'running'; }
+ 
+function beep(freq, dur, vol, t, type) {
+  if (!canPlay()) return;
+  const ctx = audioCtx;
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.connect(g); g.connect(ctx.destination);
+  o.type = type || 'sine';
+  o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.start(t); o.stop(t + dur + 0.01);
+}
+ 
+function countdownBeep() {
+  if (!canPlay()) return;
+  beep(880, 0.11, 0.4, audioCtx.currentTime);
+}
+ 
+function boxingBell(dbl) {
+  if (!canPlay()) return;
+  const ctx = audioCtx, t = ctx.currentTime;
+  function strike(st) {
+    const o1 = ctx.createOscillator(), g1 = ctx.createGain();
+    const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+    const cl = ctx.createOscillator(), cg = ctx.createGain();
+    o1.connect(g1); g1.connect(ctx.destination);
+    o2.connect(g2); g2.connect(ctx.destination);
+    cl.connect(cg); cg.connect(ctx.destination);
+    o1.type = 'triangle'; o2.type = 'sine'; cl.type = 'square';
+    o1.frequency.setValueAtTime(1050, st); o1.frequency.exponentialRampToValueAtTime(900, st+0.8);
+    o2.frequency.setValueAtTime(1480, st); o2.frequency.exponentialRampToValueAtTime(1200, st+0.8);
+    cl.frequency.setValueAtTime(2200, st);
+    g1.gain.setValueAtTime(0.55, st); g1.gain.exponentialRampToValueAtTime(0.001, st+1.1);
+    g2.gain.setValueAtTime(0.3, st);  g2.gain.exponentialRampToValueAtTime(0.001, st+0.9);
+    cg.gain.setValueAtTime(0.15, st); cg.gain.exponentialRampToValueAtTime(0.001, st+0.02);
+    o1.start(st); o1.stop(st+1.2);
+    o2.start(st); o2.stop(st+1.0);
+    cl.start(st); cl.stop(st+0.03);
+  }
+  strike(t); if (dbl) strike(t + 0.55);
+}
+ 
+/* ── App State ── */
+const state = {
+  exercises:[], rounds:9, workSec:35, warmupSec:60, breakSec:60,
+  interval:null, paused:false, phaseIdx:0, secondsLeft:0, startTime:null
+};
+let phases=[], pickerSlot=null;
+ 
+/* ── Helpers ── */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2300);
+}
+function fmt(s) { return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function updatePoolNotes() {
+  const t = EXERCISES.length+' exercises in pool';
+  ['pool-count-home','pool-count-setup'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=t; });
+}
+function addExercise(inputId) {
+  const inp = document.getElementById(inputId);
+  const val = inp.value.trim();
+  if (!val) return;
+  if (EXERCISES.map(e=>e.toLowerCase()).includes(val.toLowerCase())) { toast('Already in the list!'); return; }
+  EXERCISES.push(val); inp.value=''; updatePoolNotes(); toast('"'+val+'" added to pool');
+}
+ 
+/* ── Setup ── */
+function goSetup() {
+  state.exercises = pickRandom();
+  renderExList(); updatePoolNotes();
+  showScreen('screen-setup');
+}
+function pickRandom() {
+  const pool=[...EXERCISES], out=[];
+  for(let i=0;i<Math.min(5,pool.length);i++){
+    const j=Math.floor(Math.random()*pool.length); out.push(pool.splice(j,1)[0]);
+  }
+  return out;
+}
+function renderExList() {
+  const el=document.getElementById('ex-list'); el.innerHTML='';
+  state.exercises.forEach((ex,i)=>{
+    const c=document.createElement('div');
+    c.className='card ex-card'; c.draggable=true; c.dataset.idx=i;
+    c.innerHTML=`
+      <span class="drag-handle"><i class="ti ti-grip-vertical"></i></span>
+      <span class="ex-num">${i+1}</span>
+      <button class="ex-name-btn" onclick="resumeAudio(); openPicker(${i});" title="Choose a different exercise">${ex}</button>
+      <div class="ex-actions">
+        <button class="icon-btn" onclick="resumeAudio(); swapRandom(${i});" title="Random swap"><i class="ti ti-refresh"></i></button>
+        <button class="icon-btn" onclick="resumeAudio(); removeEx(${i});" title="Remove"><i class="ti ti-x"></i></button>
+      </div>`;
+    setupDrag(c); el.appendChild(c);
+  });
+}
+let dragSrc=null;
+function setupDrag(card) {
+  card.addEventListener('dragstart', e=>{ dragSrc=+card.dataset.idx; e.dataTransfer.effectAllowed='move'; });
+  card.addEventListener('dragover',  e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; });
+  card.addEventListener('drop', e=>{
+    e.preventDefault(); resumeAudio();
+    const tgt=+card.dataset.idx; if(dragSrc===tgt) return;
+    const [mv]=state.exercises.splice(dragSrc,1); state.exercises.splice(tgt,0,mv); renderExList();
+  });
+}
+function swapRandom(i) {
+  const pool=EXERCISES.filter(e=>!state.exercises.includes(e));
+  if(!pool.length){toast('No more exercises to swap in!');return;}
+  state.exercises[i]=pool[Math.floor(Math.random()*pool.length)]; renderExList();
+}
+function removeEx(i) {
+  if(state.exercises.length<=1){toast('Need at least 1 exercise!');return;}
+  const pool=EXERCISES.filter(e=>!state.exercises.includes(e));
+  state.exercises.splice(i,1);
+  if(pool.length) state.exercises.push(pool[Math.floor(Math.random()*pool.length)]);
+  renderExList();
+}
+ 
+/* ── Picker ── */
+function openPicker(slot) {
+  pickerSlot=slot;
+  document.getElementById('picker-title').textContent='Slot '+(slot+1)+' — choose exercise';
+  document.getElementById('picker-search').value='';
+  renderPickerList();
+  document.getElementById('picker-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('picker-search').focus(),80);
+}
+function closePicker() { document.getElementById('picker-overlay').classList.remove('open'); pickerSlot=null; }
+function handleOverlayClick(e) { if(e.target===document.getElementById('picker-overlay')){ resumeAudio(); closePicker(); } }
+function renderPickerList() {
+  const q=document.getElementById('picker-search').value.toLowerCase().trim();
+  const list=document.getElementById('picker-list');
+  const sorted=[...EXERCISES].sort((a,b)=>a.localeCompare(b));
+  const filtered=q?sorted.filter(e=>e.toLowerCase().includes(q)):sorted;
+  list.innerHTML='';
+  if(!filtered.length){list.innerHTML='<div style="padding:16px;font-size:13px;color:#a8a79f;text-align:center;">No matches</div>';return;}
+  filtered.forEach(ex=>{
+    const isActive=ex===state.exercises[pickerSlot];
+    const inUse=state.exercises.includes(ex)&&!isActive;
+    const item=document.createElement('div');
+    item.className='picker-item'+(inUse?' in-use':'');
+    item.innerHTML=`
+      <span class="picker-check">${isActive?'<i class="ti ti-check"></i>':''}</span>
+      <span>${ex}</span>
+      ${inUse?'<span class="picker-in-use-badge">in use</span>':''}`;
+    if(!inUse) item.onclick=()=>{ resumeAudio(); state.exercises[pickerSlot]=ex; renderExList(); closePicker(); toast('Slot '+(pickerSlot+1)+' → '+ex); };
+    list.appendChild(item);
+  });
+}
+ 
+/* ── Workout ── */
+function buildPhases() {
+  const q=[{type:'warmup',label:'Warm-up',ex:'Get ready!',dur:state.warmupSec}];
+  for(let r=0;r<state.rounds;r++){
+    state.exercises.forEach((ex,ei)=>q.push({type:'work',label:'Round '+(r+1)+' of '+state.rounds,ex,dur:state.workSec,round:r,exIdx:ei}));
+    if(r<state.rounds-1) q.push({type:'break',label:'Break',ex:'Rest up!',dur:state.breakSec});
+  }
+  return q;
+}
+function startWorkout() {
+  phases=buildPhases(); state.phaseIdx=0; state.paused=false; state.startTime=Date.now();
+  showScreen('screen-timer');
+  updateTimerSoundStatus();
+  loadPhase(true); tick();
+}
+function loadPhase(isFirst) {
+  const p=phases[state.phaseIdx];
+  document.getElementById('phase-lbl').textContent=p.label;
+  document.getElementById('phase-ex').textContent=p.ex;
+  state.secondsLeft=p.dur;
+  if(!isFirst){ if(p.type==='break') boxingBell(true); else if(p.type==='work') boxingBell(false); }
+  const rtEl=document.getElementById('round-lbl');
+  if(p.type==='work') rtEl.textContent='Exercise '+(p.exIdx+1)+' of '+state.exercises.length;
+  else if(p.type==='warmup') rtEl.textContent=state.rounds+' rounds · '+state.exercises.length+' exercises';
+  else rtEl.textContent='Rest round';
+  const qEl=document.getElementById('ex-queue'); qEl.innerHTML='';
+  state.exercises.forEach((ex,i)=>{
+    const pip=document.createElement('span'); pip.className='ex-pip'; pip.textContent=ex;
+    if(p.type==='work'){ if(i<p.exIdx) pip.classList.add('done'); if(i===p.exIdx) pip.classList.add('active'); }
+    qEl.appendChild(pip);
+  });
+  updateTimer();
+}
+function updateTimer() {
+  document.getElementById('big-time').textContent=fmt(state.secondsLeft);
+  const p=phases[state.phaseIdx];
+  document.getElementById('prog-bar').style.width=Math.round((state.secondsLeft/p.dur)*100)+'%';
+}
+function tick() {
+  clearInterval(state.interval);
+  state.interval=setInterval(()=>{
+    if(state.paused) return;
+    state.secondsLeft--;
+    if(state.secondsLeft<=3&&state.secondsLeft>0) countdownBeep();
+    if(state.secondsLeft<=0){
+      state.phaseIdx++;
+      if(state.phaseIdx>=phases.length){ clearInterval(state.interval); boxingBell(true); setTimeout(endWorkout,800); return; }
+      loadPhase(false); return;
+    }
+    updateTimer();
+  },1000);
+}
+function togglePause(){
+  state.paused=!state.paused;
+  const btn=document.getElementById('pp-btn');
+  btn.innerHTML=state.paused?'<i class="ti ti-player-play"></i>':'<i class="ti ti-player-pause"></i>';
+}
+function skipPhase(){ state.phaseIdx=Math.min(state.phaseIdx+1,phases.length-1); loadPhase(false); }
+function rewindPhase(){
+  if(state.secondsLeft<phases[state.phaseIdx].dur-2) loadPhase(true);
+  else{ state.phaseIdx=Math.max(state.phaseIdx-1,0); loadPhase(true); }
+}
+function endWorkout(){
+  clearInterval(state.interval);
+  const elapsed=Math.round((Date.now()-(state.startTime||Date.now()))/1000);
+  const doneRounds=phases.slice(0,state.phaseIdx+1).filter(p=>p.type==='work'&&p.exIdx===state.exercises.length-1).length;
+  document.getElementById('s-rounds').textContent=doneRounds||state.rounds;
+  document.getElementById('s-exercises').textContent=state.exercises.length;
+  document.getElementById('s-time').textContent=fmt(elapsed);
+  document.getElementById('s-congrats').textContent=CONGRATS[Math.floor(Math.random()*CONGRATS.length)];
+  const log=document.getElementById('log-list'); log.innerHTML='';
+  state.exercises.forEach(ex=>{
+    const row=document.createElement('div'); row.className='log-item';
+    row.innerHTML=`<span class="log-name">${ex}</span><span class="log-detail">${doneRounds||state.rounds} rounds · ${state.workSec}s each</span>`;
+    log.appendChild(row);
+  });
+  showScreen('screen-summary');
+}
+ 
+/* ── Share ── */
+function share(platform){
+  const text='Just crushed a GRIND workout! 💪\n'+state.exercises.join(' · ')+'\n'+state.rounds+' rounds · '+state.workSec+'s per exercise\n#GRIND #Calisthenics #Tabata #HIIT';
+  if(platform==='copy'){ navigator.clipboard.writeText(text).then(()=>toast('Copied to clipboard!')); }
+  else if(platform==='twitter'){ window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text),'_blank'); }
+  else if(platform==='instagram'){ navigator.clipboard.writeText(text).then(()=>toast('Caption copied — open Instagram to paste!')); }
+}
+ 
+updatePoolNotes();
+</script>
+</body>
+</html>
