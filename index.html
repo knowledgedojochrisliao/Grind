@@ -431,6 +431,7 @@ const CONGRATS = [
 let audioCtx = null;
 let soundEnabled = false;
 let muted = false;
+let audioUnlocked = false;
  
 function getCtx() {
   if (!audioCtx) {
@@ -456,6 +457,38 @@ function enableSound() {
     toast('Could not enable sound — try again');
   });
 }
+
+// Many mobile browsers (iOS Safari/Chrome) require a direct user gesture
+// to unlock WebAudio. Install a one-shot listener to unlock audio on
+// the first touch/click and mark audio as enabled so synthesized sounds
+// will play without requiring the separate "Enable sound" button.
+function unlockAudio() {
+  if (audioUnlocked) return;
+  const ctx = getCtx();
+  try {
+    // create a short silent oscillator to unlock audio on iOS
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, ctx.currentTime);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime + 0.02);
+    ctx.resume().then(() => {
+      audioUnlocked = true;
+      soundEnabled = true;
+      muted = false;
+      updateSoundBtn();
+      updateTimerSoundStatus();
+    }).catch(()=>{});
+  } catch (e) {
+    // ignore
+  }
+}
+
+// Attach one-shot listeners for the first user gesture
+['touchstart','click','keydown'].forEach(evt => {
+  window.addEventListener(evt, function onceHandler(e){ unlockAudio(); window.removeEventListener(evt, onceHandler); }, {passive:true});
+});
  
 // Called on every button press throughout the app to keep iOS context alive
 function resumeAudio() {
