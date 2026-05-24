@@ -593,6 +593,27 @@ function boxingBell(dbl) {
   strike(t); if (dbl) strike(t + 0.55);
 }
  
+/* ── Wake Lock (keep screen on) ── */
+let wakeLock = null;
+
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    }
+  } catch (err) {
+    console.log('Wake Lock unavailable:', err);
+  }
+}
+
+async function releaseWakeLock() {
+  if (wakeLock) {
+    try { await wakeLock.release(); wakeLock = null; }
+    catch (err) { console.log('Error releasing wake lock:', err); }
+  }
+}
+
 /* ── App State ── */
 const state = {
   exercises:[], rounds:9, workSec:35, warmupSec:60, breakSec:60,
@@ -718,6 +739,7 @@ function buildPhases() {
 }
 function startWorkout() {
   phases=buildPhases(); state.phaseIdx=0; state.paused=false; state.startTime=Date.now();
+  requestWakeLock();
   showScreen('screen-timer');
   updateTimerSoundStatus();
   loadPhase(true); tick();
@@ -771,6 +793,7 @@ function rewindPhase(){
 }
 function endWorkout(){
   clearInterval(state.interval);
+  releaseWakeLock();
   const elapsed=Math.round((Date.now()-(state.startTime||Date.now()))/1000);
   const doneRounds=phases.slice(0,state.phaseIdx+1).filter(p=>p.type==='work'&&p.exIdx===state.exercises.length-1).length;
   document.getElementById('s-rounds').textContent=doneRounds||state.rounds;
